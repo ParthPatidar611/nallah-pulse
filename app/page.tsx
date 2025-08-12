@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import InteractiveMap from "@/components/InteractiveMap";
 import {
   MapPin,
   AlertTriangle,
@@ -47,50 +47,43 @@ export default function FloodDetectionSystem() {
   const [analysisType, setAnalysisType] = useState<"coordinates" | "image">(
     "coordinates"
   );
-
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<[number, number] | undefined>(undefined);
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-  const [mapError, setMapError] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [aiAnalysis, setAiAnalysis] = useState<string>("");
-  const mapRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const API_BASE_URL = "https://flood-analyser.onrender.com";
+  const API_BASE_URL = "http://localhost:8000";
 
-  // Initialize Google Maps
+  // Check backend connectivity on mount
   useEffect(() => {
-    const initMap = async () => {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      if (!apiKey || apiKey === "YOUR_API_KEY_HERE") {
-        setMapError(true);
-        return;
-      }
-
+    const checkBackendHealth = async () => {
       try {
-        const google = await new Loader({
-          apiKey,
-          version: "weekly",
-          libraries: ["places"],
-        }).load();
-        if (mapRef.current) {
-          setMap(
-            new google.maps.Map(mapRef.current, {
-              center: { lat: 40.7128, lng: -74.006 },
-              zoom: 10,
-              mapTypeId: google.maps.MapTypeId.TERRAIN,
-            })
-          );
+        const response = await fetch(`${API_BASE_URL}/health`);
+        if (response.ok) {
+          console.log("Backend is running and healthy");
+        } else {
+          console.warn("Backend responded but not healthy");
         }
       } catch (error) {
-        console.error("Error loading Google Maps:", error);
-        setMapError(true);
+        console.error("Backend is not accessible:", error);
       }
     };
-    initMap();
+    
+    checkBackendHealth();
   }, []);
+
+  // Default map center (New York City)
+  const defaultCenter: [number, number] = [40.7128, -74.006];
+
+  // Handle location selection from map
+  const handleLocationSelect = (lat: number, lng: number) => {
+    setInputLat(lat.toString());
+    setInputLng(lng.toString());
+    setSelectedLocation([lat, lng]);
+  };
 
   // API calls
   const callAPI = async (endpoint: string, data: any) => {
@@ -146,40 +139,11 @@ export default function FloodDetectionSystem() {
       };
       setFloodRisk(riskData);
       setAiAnalysis(apiResponse.ai_analysis || "");
-
-      // Update map
-      if (map) {
-        map.setCenter({ lat, lng });
-        map.setZoom(15);
-        map.data.forEach((feature) => map.data.remove(feature));
-        new google.maps.Marker({
-          position: { lat, lng },
-          map,
-          title: "Selected Location",
-        });
-        const riskColor =
-          riskData.riskLevel === "Very High"
-            ? "#FF0000"
-            : riskData.riskLevel === "High"
-            ? "#FF6600"
-            : riskData.riskLevel === "Medium"
-            ? "#FFCC00"
-            : "#00FF00";
-        new google.maps.Circle({
-          strokeColor: riskColor,
-          strokeOpacity: 0.8,
-          strokeWeight: 2,
-          fillColor: riskColor,
-          fillOpacity: 0.35,
-          map,
-          center: { lat, lng },
-          radius: 1000,
-        });
-      }
+      setSelectedLocation([lat, lng]);
     } catch (error) {
       console.error("Error analyzing coordinates:", error);
       setAlertMessage(
-        "Error analyzing coordinates. Please check if the backend server is running."
+        "Error analyzing coordinates. Please check if the backend server is running on localhost:8000."
       );
       setShowAlert(true);
     } finally {
@@ -230,7 +194,7 @@ export default function FloodDetectionSystem() {
     } catch (error) {
       console.error("Error analyzing image:", error);
       setAlertMessage(
-        "Error analyzing image. Please check if the backend server is running."
+        "Error analyzing image. Please check if the backend server is running on localhost:8000."
       );
       setShowAlert(true);
     } finally {
@@ -542,25 +506,18 @@ export default function FloodDetectionSystem() {
               <Globe className="h-5 w-5 text-green-600" />
               Interactive Map
             </CardTitle>
+            <p className="text-sm text-slate-600 mt-2">
+              Click on the map to select coordinates or use the input fields above
+            </p>
           </CardHeader>
           <CardContent>
-            {mapError ? (
-              <div className="w-full h-80 rounded-lg border border-slate-200 bg-slate-50 flex flex-col items-center justify-center">
-                <Map className="h-16 w-16 text-slate-300 mb-4" />
-                <h3 className="text-lg font-semibold text-slate-700 mb-2">
-                  Map Not Available
-                </h3>
-                <p className="text-slate-500 text-center max-w-md">
-                  To enable the interactive map, set up a Google Maps API key in
-                  .env.local
-                </p>
-              </div>
-            ) : (
-              <div
-                ref={mapRef}
-                className="w-full h-80 rounded-lg border border-slate-200"
-              />
-            )}
+            <InteractiveMap
+              center={defaultCenter}
+              zoom={10}
+              selectedLocation={selectedLocation}
+              riskLevel={floodRisk?.riskLevel}
+              onLocationSelect={handleLocationSelect}
+            />
           </CardContent>
         </Card>
       </div>

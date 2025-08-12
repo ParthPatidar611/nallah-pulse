@@ -1,0 +1,29 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+
+// Create a completely client-side only map component
+const ClientOnlyMap = dynamic(() => import("./ClientMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-80 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+        <p className="text-slate-600">Loading map...</p>
+      </div>
+    </div>
+  ),
+});
+
+interface MapProps {
+  center: [number, number];
+  zoom: number;
+  selectedLocation?: [number, number];
+  riskLevel?: string;
+  onLocationSelect?: (lat: number, lng: number) => void;
+}
+
+export default function InteractiveMap(props: MapProps) {
+  return <ClientOnlyMap {...props} />;
+}
