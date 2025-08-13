@@ -55,7 +55,7 @@ export default function FloodDetectionSystem() {
   const [aiAnalysis, setAiAnalysis] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const API_BASE_URL = "http://localhost:8000";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
   // Check backend connectivity on mount
   useEffect(() => {

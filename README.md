@@ -1,101 +1,154 @@
-# 🌊 Flood Detection System
+# 🌊 Flood Analyser
 
-A lean and efficient MVP for flood risk assessment that allows users to enter coordinates or upload images for AI-powered analysis.
+A comprehensive flood risk assessment system built with Next.js, React Leaflet, and Google Gemini AI, deployed entirely on Vercel.
 
-## Features
+## 🚀 Features
 
-- **Coordinate Analysis**: Enter latitude and longitude for location-based flood risk assessment
-- **Image Analysis**: Upload terrain photos for AI-powered visual analysis
-- **Interactive Map**: Visualize locations with risk overlay
-- **AI-Powered**: Uses Google's Gemini AI for intelligent analysis
-- **Clean UI**: Modern, responsive design with shadcn/ui components
+- **Interactive Map**: Click to select coordinates for analysis
+- **Coordinate Analysis**: Input latitude/longitude for flood risk assessment
+- **Image Analysis**: Upload images for AI-powered flood detection
+- **Real-time Risk Assessment**: Get detailed risk levels and recommendations
+- **AI-Powered Insights**: Powered by Google Gemini AI
+- **Responsive Design**: Works on desktop and mobile devices
+- **Full-Stack on Vercel**: Frontend and backend deployed as one application
 
-## Quick Start
+## 🛠️ Tech Stack
 
-### Option 1: Start Both Servers Together (Recommended)
+### Frontend
+- **Next.js 15** - React framework with App Router
+- **React Leaflet** - Interactive maps
+- **Tailwind CSS** - Styling
+- **Radix UI** - Accessible components
+- **TypeScript** - Type safety
 
+### Backend (Vercel API Routes)
+- **Next.js API Routes** - Serverless backend
+- **Google Gemini AI** - AI analysis
+- **TypeScript** - Type-safe API development
+
+## 📦 Installation
+
+### Prerequisites
+- Node.js 18+ 
+- Google Gemini API key
+
+### Local Development Setup
 ```bash
-# Set up Gemini API key
-cd backend
-echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env
+# Clone the repository
+git clone <your-repo-url>
+cd flood-analyser
 
-# Start both servers
-./start-dev.sh
-```
-
-Access the app at:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-
-### Option 2: Start Servers Separately
-
-#### Backend Setup
-```bash
-cd backend
-python3 -m pip install -r requirements.txt
-echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env
-python3 start.py
-```
-
-#### Frontend Setup
-```bash
+# Install dependencies
 npm install
+
+# Create environment file
+echo "GEMINI_API_KEY=your-gemini-api-key-here" > .env.local
+
+# Run development server
 npm run dev
 ```
 
-## How to Use
+## 🌐 Deployment
 
-1. **Coordinate Analysis**: Enter latitude and longitude coordinates
-2. **Image Analysis**: Upload terrain photos for AI assessment
-3. **View Results**: See risk level, elevation, distance from water, and recommendations
-4. **Interactive Map**: Visualize the location with risk overlay
+### **Deploy to Vercel (Recommended)**
 
-## API Endpoints
+1. **Get Gemini API Key:**
+   - Go to [Google AI Studio](https://aistudio.google.com/app/apikey)
+   - Create a new API key
 
-- `POST /api/analyze/coordinates` - Analyze flood risk by coordinates
-- `POST /api/analyze/image` - Analyze flood risk by image upload
-- `GET /health` - Health check
+2. **Deploy to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Add environment variable: `GEMINI_API_KEY=your-api-key`
+   - Deploy automatically
 
-## Technical Stack
+3. **Access Your App:**
+   - Frontend: `https://your-app.vercel.app`
+   - API: `https://your-app.vercel.app/api/*`
 
-### Frontend
-- Next.js 15 with App Router
-- TypeScript
-- Tailwind CSS + shadcn/ui
-- Google Maps JavaScript API
+## 🔧 Configuration
 
-### Backend
-- FastAPI
-- Google Gemini AI
-- Python 3.9+
-- Pydantic for validation
-
-## Project Structure
-
-```
-flood-analyser/
-├── app/page.tsx           # Main flood detection component
-├── backend/main.py        # FastAPI application with Gemini AI
-├── backend/start.py       # Startup script
-├── start-dev.sh          # Development script
-└── README.md             # Documentation
-```
-
-## Setup Requirements
-
-1. **Gemini API Key**: Get from [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. **Google Maps API Key** (optional): For interactive map functionality
-
-## Development
+### **Environment Variables**
 
 ```bash
-# Quick start
-./start-dev.sh
-
-# Individual development
-npm run dev          # Frontend
-cd backend && python3 start.py  # Backend
+GEMINI_API_KEY=your-gemini-api-key
 ```
 
-The app is now lean and focused on the core flood detection functionality with AI-powered analysis.
+### **API Endpoints**
+
+- `GET /api/health` - Health check
+- `POST /api/analyze/coordinates` - Coordinate analysis
+- `POST /api/analyze/image` - Image analysis
+
+## 🗺️ Map Configuration
+
+The application uses React Leaflet with OpenStreetMap tiles. The map is configured to:
+- Prevent multiple initializations
+- Handle click events for coordinate selection
+- Display markers and risk assessment circles
+- Support responsive design
+
+## 🚨 Troubleshooting
+
+### **Common Issues**
+
+1. **API Key Issues**
+   - Ensure `GEMINI_API_KEY` is set correctly
+   - Check API key permissions and quotas
+
+2. **Map Loading Issues**
+   - The app includes safeguards against initialization errors
+   - If issues occur, refresh the page
+
+3. **Function Timeout**
+   - AI analysis has 60-second timeout
+   - Consider optimizing prompts for faster responses
+
+### **Performance Optimization**
+
+- Images are optimized using Next.js Image component
+- Bundle size is optimized with tree shaking
+- API responses are cached where appropriate
+
+## 📝 API Documentation
+
+Once deployed, visit:
+- Health Check: `https://your-app.vercel.app/api/health`
+- Swagger-like documentation available in the app
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues and questions:
+1. Check the troubleshooting section
+2. Review the deployment guide
+3. Open an issue on GitHub
+
+## 🎯 Quick Start
+
+```bash
+# Clone and setup
+git clone <your-repo-url>
+cd flood-analyser
+npm install
+
+# Add your API key
+echo "GEMINI_API_KEY=your-key" > .env.local
+
+# Run locally
+npm run dev
+
+# Deploy to Vercel
+# Push to GitHub and connect to Vercel
+```
