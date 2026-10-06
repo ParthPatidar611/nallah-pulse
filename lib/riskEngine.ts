@@ -111,7 +111,9 @@ function computeHotspotScore(
   const blockageContrib = hotspot.blockageFactor * blockageMultiplier * 0.12;
   const terrainContrib = hotspot.terrainVulnerability * 0.06;
 
-  const antecedentLevel = Math.min(100, params.antecedentMoisture + antecedentBoost);
+  // Safely clamp antecedent moisture between 0 and 100; fallback to 0 if NaN/undefined
+  const safeMoisture = Math.max(0, Math.min(100, Number.isFinite(params.antecedentMoisture) ? Number(params.antecedentMoisture) : 0));
+  const antecedentLevel = Math.min(100, safeMoisture + antecedentBoost);
   const antecedentContrib = (antecedentLevel / 100) * 12;
 
   const breakdown: ScoreBreakdown = {
@@ -123,11 +125,14 @@ function computeHotspotScore(
     antecedentContribution: Math.round(antecedentContrib),
   };
 
-  const total = Math.min(
-    100,
-    Math.round(
-      rainfallContrib + drainageContrib + historicalContrib +
-      blockageContrib + terrainContrib + antecedentContrib
+  const total = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        rainfallContrib + drainageContrib + historicalContrib +
+        blockageContrib + terrainContrib + antecedentContrib
+      )
     )
   );
 

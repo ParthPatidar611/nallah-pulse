@@ -386,7 +386,10 @@ export function getRiskCategoryStyles(category: RiskCategory) {
 /**
  * Dynamic KPI Aggregator
  */
-export function getHotspotKPIs(hotspots: JammuHotspot[] = JAMMU_HOTSPOTS) {
+export function getHotspotKPIs(
+  hotspots: JammuHotspot[] = JAMMU_HOTSPOTS,
+  riskResults?: { hotspotId: string; riskCategory: RiskCategory }[]
+) {
   let criticalCount = 0;
   let highCount = 0;
   let moderateCount = 0;
@@ -396,7 +399,8 @@ export function getHotspotKPIs(hotspots: JammuHotspot[] = JAMMU_HOTSPOTS) {
   let totalBlockage = 0;
 
   for (const h of hotspots) {
-    const level = getInitialDisplayLevel(h);
+    const dynamicMatch = riskResults?.find((r) => r.hotspotId === h.id);
+    const level = dynamicMatch ? dynamicMatch.riskCategory : getInitialDisplayLevel(h);
     if (level === "CRITICAL") criticalCount++;
     else if (level === "HIGH") highCount++;
     else if (level === "MODERATE") moderateCount++;

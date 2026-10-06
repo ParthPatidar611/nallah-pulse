@@ -21,6 +21,7 @@ import {
   getRiskCategoryStyles,
   RiskCategory,
 } from "@/lib/data/jammuHotspots";
+import { HotspotRiskResult } from "@/lib/riskEngine";
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -44,6 +45,7 @@ interface MapProps {
   onHotspotSelect?: (hotspot: JammuHotspot) => void;
   drainageCorridors?: JammuDrainageCorridor[];
   showDrainageCorridors?: boolean;
+  riskResults?: HotspotRiskResult[];
 }
 
 // Map updater to smoothly navigate to selected points
@@ -160,6 +162,7 @@ export default function ClientMap({
   onHotspotSelect,
   drainageCorridors = [],
   showDrainageCorridors = true,
+  riskResults,
 }: MapProps) {
   const [clickedLocation, setClickedLocation] = useState<[number, number] | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -265,7 +268,8 @@ export default function ClientMap({
 
         {/* Prototype Hotspot Markers */}
         {hotspots.map((hotspot) => {
-          const category = getInitialDisplayLevel(hotspot);
+          const dynamicRisk = riskResults?.find((r) => r.hotspotId === hotspot.id);
+          const category = dynamicRisk ? dynamicRisk.riskCategory : getInitialDisplayLevel(hotspot);
           const styles = getRiskCategoryStyles(category);
           const isSelected = selectedHotspot?.id === hotspot.id;
           const markerIcon = createHotspotIcon(category, isSelected);
@@ -290,6 +294,11 @@ export default function ClientMap({
                     style={{ backgroundColor: styles.color }}
                   ></span>
                   <span>{hotspot.name}</span>
+                  {dynamicRisk && (
+                    <span className="text-[10px] font-bold text-slate-700">
+                      ({dynamicRisk.dynamicScore})
+                    </span>
+                  )}
                   <span
                     className="text-[10px] font-bold px-1 py-0.2 rounded"
                     style={{
@@ -312,15 +321,22 @@ export default function ClientMap({
                         {hotspot.locality}
                       </div>
                     </div>
-                    <span
-                      className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-                      style={{
-                        backgroundColor: `${styles.color}20`,
-                        color: styles.color,
-                      }}
-                    >
-                      {category}
-                    </span>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <span
+                        className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+                        style={{
+                          backgroundColor: `${styles.color}20`,
+                          color: styles.color,
+                        }}
+                      >
+                        {category}
+                      </span>
+                      {dynamicRisk && (
+                        <span className="text-[10px] font-bold text-slate-700">
+                          Score: {dynamicRisk.dynamicScore}/100
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-1 text-[11px] bg-slate-50 p-1.5 rounded">

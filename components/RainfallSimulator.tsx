@@ -311,7 +311,7 @@ export default function RainfallSimulator({
 
           {/* Antecedent Moisture */}
           <SliderControl
-            label="Ground Saturation"
+            label="Antecedent Moisture (Soil Saturation)"
             value={params.antecedentMoisture}
             min={0}
             max={100}

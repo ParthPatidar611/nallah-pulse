@@ -92,8 +92,11 @@ export default function NallahPulseDashboard() {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
-  // Dynamic KPIs derived from the central dataset
-  const kpiData = useMemo(() => getHotspotKPIs(JAMMU_HOTSPOTS), []);
+  // Dynamic KPIs derived from the central dataset and simulated scenario risk output
+  const kpiData = useMemo(
+    () => getHotspotKPIs(JAMMU_HOTSPOTS, engineOutput.results),
+    [engineOutput.results]
+  );
 
   // Re-run risk engine whenever scenario params change
   useEffect(() => {
@@ -456,6 +459,7 @@ export default function NallahPulseDashboard() {
                   onHotspotSelect={handleHotspotSelect}
                   drainageCorridors={JAMMU_DRAINAGE_CORRIDORS}
                   showDrainageCorridors={showDrainageCorridors}
+                  riskResults={engineOutput.results}
                 />
               </CardContent>
 
@@ -619,17 +623,25 @@ export default function NallahPulseDashboard() {
 
                       <div className="text-right">
                         {(() => {
-                          const cat = getInitialDisplayLevel(selectedHotspot);
+                          const selectedRisk = engineOutput.results.find((r) => r.hotspotId === selectedHotspot.id);
+                          const cat = selectedRisk ? selectedRisk.riskCategory : getInitialDisplayLevel(selectedHotspot);
                           const styles = getRiskCategoryStyles(cat);
                           return (
-                            <span
-                              className={`inline-block px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider border ${styles.badgeClass}`}
-                            >
-                              {cat} RISK
-                            </span>
+                            <>
+                              <span
+                                className={`inline-block px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider border ${styles.badgeClass}`}
+                              >
+                                {cat} RISK
+                              </span>
+                              {selectedRisk && (
+                                <div className="text-[11px] font-bold text-slate-700 mt-1">
+                                  Simulated Score: {selectedRisk.dynamicScore}/100
+                                </div>
+                              )}
+                            </>
                           );
                         })()}
-                        <div className="text-[10px] text-slate-500 mt-1">
+                        <div className="text-[10px] text-slate-500 mt-0.5">
                           Elev: {selectedHotspot.elevationMeters}m MSL
                         </div>
                       </div>
@@ -745,6 +757,32 @@ export default function NallahPulseDashboard() {
                               style={{ width: `${selectedHotspot.populationImpactProxy}%` }}
                             ></div>
                           </div>
+                        </div>
+
+                        {/* Antecedent Moisture (Scenario Condition) */}
+                        <div>
+                          {(() => {
+                            const selectedRisk = engineOutput.results.find((r) => r.hotspotId === selectedHotspot.id);
+                            const contrib = selectedRisk ? selectedRisk.scoreBreakdown.antecedentContribution : 0;
+                            return (
+                              <>
+                                <div className="flex justify-between text-[11px] mb-1">
+                                  <span className="font-medium text-slate-700">
+                                    Antecedent Moisture (Soil Saturation)
+                                  </span>
+                                  <span className="font-bold text-cyan-700">
+                                    {scenarioParams.antecedentMoisture}% (+{contrib} pts)
+                                  </span>
+                                </div>
+                                <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className="bg-cyan-500 h-full rounded-full transition-all duration-300"
+                                    style={{ width: `${scenarioParams.antecedentMoisture}%` }}
+                                  ></div>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
