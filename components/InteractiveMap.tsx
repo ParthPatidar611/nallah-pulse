@@ -16,12 +16,19 @@ const ClientOnlyMap = dynamic(() => import("./ClientMap"), {
   ),
 });
 
+import { JammuHotspot, JammuDrainageCorridor } from "@/lib/data/jammuHotspots";
+
 interface MapProps {
   center: [number, number];
   zoom: number;
   selectedLocation?: [number, number];
   riskLevel?: string;
   onLocationSelect?: (lat: number, lng: number) => void;
+  hotspots?: JammuHotspot[];
+  selectedHotspot?: JammuHotspot | null;
+  onHotspotSelect?: (hotspot: JammuHotspot) => void;
+  drainageCorridors?: JammuDrainageCorridor[];
+  showDrainageCorridors?: boolean;
 }
 
 export default function InteractiveMap(props: MapProps) {
