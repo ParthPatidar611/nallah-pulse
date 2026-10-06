@@ -1,16 +1,21 @@
-# 🌊 Flood Analyser
+# 🌊 NallahPulse
 
-A comprehensive flood risk assessment system built with Next.js, React Leaflet, and Google Gemini AI, deployed entirely on Vercel.
+### Jammu Urban Waterlogging Intelligence
+
+NallahPulse is a prototype urban drainage intelligence system for Jammu that identifies waterlogging risk, explains contributing factors, and helps prioritize intervention.
+
+> **Disclaimer**: NallahPulse is an experimental civic-technology prototype for research and evaluation purposes. All indicators, historical tendencies, and scores are demonstrative and not official municipal warnings from Jammu Municipal Corporation (JMC).
+
+*Note: Originally based on the open-source Flood Analyser project under the MIT License.*
 
 ## 🚀 Features
 
-- **Interactive Map**: Click to select coordinates for analysis
-- **Coordinate Analysis**: Input latitude/longitude for flood risk assessment
-- **Image Analysis**: Upload images for AI-powered flood detection
-- **Real-time Risk Assessment**: Get detailed risk levels and recommendations
-- **AI-Powered Insights**: Powered by Google Gemini AI
-- **Responsive Design**: Works on desktop and mobile devices
-- **Full-Stack on Vercel**: Frontend and backend deployed as one application
+- **Jammu Interactive Map**: Click coordinates or browse key drainage corridors across Jammu
+- **Coordinate Analysis**: Input latitude/longitude for urban waterlogging vulnerability evaluation
+- **Terrain & Blockage Analysis**: Analyze visual drainage and obstruction indicators
+- **Waterlogging Risk Assessment**: Evaluate risk indicators and municipal intervention guidance
+- **AI-Powered Insights**: Contextual risk reasoning via Google Gemini AI
+- **Civic Tech Presentation**: Fast, responsive interface built with Next.js and React Leaflet
 
 ## 🛠️ Tech Stack
 

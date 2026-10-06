@@ -61,9 +61,9 @@ export default function FloodDetectionSystem() {
   useEffect(() => {
     const checkBackendHealth = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/health`);
+        const response = await fetch(`${API_BASE_URL}/api/health`);
         if (response.ok) {
-          console.log("Backend is running and healthy");
+          console.log("NallahPulse API is running and healthy");
         } else {
           console.warn("Backend responded but not healthy");
         }
@@ -75,8 +75,8 @@ export default function FloodDetectionSystem() {
     checkBackendHealth();
   }, []);
 
-  // Default map center (New York City)
-  const defaultCenter: [number, number] = [40.7128, -74.006];
+  // Default map center (Jammu, Jammu & Kashmir)
+  const defaultCenter: [number, number] = [32.7266, 74.8570];
 
   // Handle location selection from map
   const handleLocationSelect = (lat: number, lng: number) => {
@@ -143,7 +143,7 @@ export default function FloodDetectionSystem() {
     } catch (error) {
       console.error("Error analyzing coordinates:", error);
       setAlertMessage(
-        "Error analyzing coordinates. Please check if the backend server is running on localhost:8000."
+        "Error analyzing coordinates. Please try again or verify connectivity."
       );
       setShowAlert(true);
     } finally {
@@ -194,7 +194,7 @@ export default function FloodDetectionSystem() {
     } catch (error) {
       console.error("Error analyzing image:", error);
       setAlertMessage(
-        "Error analyzing image. Please check if the backend server is running on localhost:8000."
+        "Error analyzing image. Please try again or verify connectivity."
       );
       setShowAlert(true);
     } finally {
@@ -223,18 +223,26 @@ export default function FloodDetectionSystem() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-blue-100 rounded-full mr-4">
+          <div className="flex items-center justify-center mb-3">
+            <div className="p-3 bg-blue-100 rounded-2xl mr-3 shadow-sm border border-blue-200">
               <Globe className="h-8 w-8 text-blue-600" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900">
-              Flood Detection System
-            </h1>
+            <div className="text-left">
+              <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                NallahPulse
+              </h1>
+              <p className="text-xs font-semibold tracking-wider text-blue-600 uppercase">
+                Jammu Urban Waterlogging Intelligence
+              </p>
+            </div>
           </div>
-          <p className="text-slate-600">
-            Analyze flood risk using coordinates or upload images for AI-powered
-            terrain analysis
+          <p className="text-slate-600 max-w-2xl mx-auto text-sm leading-relaxed">
+            NallahPulse is a prototype urban drainage intelligence system for Jammu that identifies waterlogging risk, explains contributing factors, and helps prioritize intervention.
           </p>
+          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            Civic-Tech Prototype &bull; Demonstrative Data &bull; Not an Official Municipal System
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -279,7 +287,7 @@ export default function FloodDetectionSystem() {
                         id="latitude"
                         type="number"
                         step="any"
-                        placeholder="40.7128"
+                        placeholder="32.7266"
                         value={inputLat}
                         onChange={(e) => setInputLat(e.target.value)}
                       />
@@ -290,7 +298,7 @@ export default function FloodDetectionSystem() {
                         id="longitude"
                         type="number"
                         step="any"
-                        placeholder="-74.0060"
+                        placeholder="74.8570"
                         value={inputLng}
                         onChange={(e) => setInputLng(e.target.value)}
                       />
@@ -404,8 +412,8 @@ export default function FloodDetectionSystem() {
           <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-                Risk Assessment
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+                Waterlogging Risk Assessment (Prototype)
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -414,8 +422,8 @@ export default function FloodDetectionSystem() {
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
                   <p className="text-slate-600">
                     {analysisType === "coordinates"
-                      ? "Analyzing coordinates..."
-                      : "Analyzing image..."}
+                      ? "Evaluating drainage & waterlogging indicators..."
+                      : "Analyzing terrain imagery..."}
                   </p>
                 </div>
               )}
@@ -450,7 +458,7 @@ export default function FloodDetectionSystem() {
                       <div className="text-2xl font-bold text-blue-600">
                         {floodRisk.distanceFromWater}m
                       </div>
-                      <div className="text-xs text-slate-500">From Water</div>
+                      <div className="text-xs text-slate-500">From Drainage / Water</div>
                     </div>
                   </div>
 
@@ -472,7 +480,7 @@ export default function FloodDetectionSystem() {
 
                   <div>
                     <h4 className="font-medium text-slate-700 mb-3">
-                      Recommendations
+                      Recommended Actions
                     </h4>
                     <ul className="space-y-2">
                       {floodRisk.recommendations.map((rec, index) => (
@@ -492,7 +500,7 @@ export default function FloodDetectionSystem() {
               {!floodRisk && !isLoading && (
                 <div className="text-center py-12 text-slate-500">
                   <Shield className="h-12 w-12 mx-auto mb-4 text-slate-300" />
-                  <p>Choose an analysis method to see flood risk assessment</p>
+                  <p>Select a location on the Jammu map or enter coordinates to evaluate drainage risk</p>
                 </div>
               )}
             </CardContent>
@@ -503,23 +511,30 @@ export default function FloodDetectionSystem() {
         <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-green-600" />
-              Interactive Map
+              <Globe className="h-5 w-5 text-blue-600" />
+              Jammu Drainage &amp; Waterlogging Map
             </CardTitle>
             <p className="text-sm text-slate-600 mt-2">
-              Click on the map to select coordinates or use the input fields above
+              Click anywhere in Jammu to select coordinates, or use the input fields above
             </p>
           </CardHeader>
           <CardContent>
             <InteractiveMap
               center={defaultCenter}
-              zoom={10}
+              zoom={12}
               selectedLocation={selectedLocation}
               riskLevel={floodRisk?.riskLevel}
               onLocationSelect={handleLocationSelect}
             />
           </CardContent>
         </Card>
+
+        {/* Civic-Tech Prototype Disclaimer */}
+        <footer className="mt-8 pt-4 border-t border-slate-200/80 text-center text-xs text-slate-500">
+          <p>
+            NallahPulse is a civic-technology prototype for research and evaluation purposes. All indicators and scores are demonstrative and not official Jammu Municipal Corporation (JMC) warnings or flood advisories.
+          </p>
+        </footer>
       </div>
 
       {/* Alert Dialog */}

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🌊 Starting Flood Detection System..."
+echo "🌊 Starting NallahPulse (Jammu Urban Waterlogging Intelligence)..."
 echo "=================================="
 
 # Function to check if a port is in use
