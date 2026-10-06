@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import InteractiveMap from "@/components/InteractiveMap";
+import RainfallSimulator from "@/components/RainfallSimulator";
 import {
   JAMMU_HOTSPOTS,
   JAMMU_DRAINAGE_CORRIDORS,
@@ -24,6 +25,13 @@ import {
   getRiskCategoryStyles,
   getHotspotKPIs,
 } from "@/lib/data/jammuHotspots";
+import {
+  runRiskEngine,
+  DEFAULT_SCENARIO_PARAMS,
+  ScenarioParams,
+  EngineOutput,
+  getAlertStatusStyles,
+} from "@/lib/riskEngine";
 import {
   MapPin,
   AlertTriangle,
@@ -43,6 +51,7 @@ import {
   ChevronRight,
   Sliders,
   Check,
+  Zap,
 } from "lucide-react";
 
 interface FloodRiskData {
@@ -66,7 +75,7 @@ export default function NallahPulseDashboard() {
     JAMMU_HOTSPOTS[0] // Default to Krishna Nagar
   );
   const [showDrainageCorridors, setShowDrainageCorridors] = useState(true);
-  const [activePanelTab, setActivePanelTab] = useState<"hotspot" | "custom">("hotspot");
+  const [activePanelTab, setActivePanelTab] = useState<"hotspot" | "custom" | "engine">("engine");
 
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -75,10 +84,22 @@ export default function NallahPulseDashboard() {
   const [aiAnalysis, setAiAnalysis] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Phase 3: Risk Engine state
+  const [scenarioParams, setScenarioParams] = useState<ScenarioParams>(DEFAULT_SCENARIO_PARAMS);
+  const [engineOutput, setEngineOutput] = useState<EngineOutput>(() =>
+    runRiskEngine(JAMMU_HOTSPOTS, DEFAULT_SCENARIO_PARAMS)
+  );
+
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
   // Dynamic KPIs derived from the central dataset
   const kpiData = useMemo(() => getHotspotKPIs(JAMMU_HOTSPOTS), []);
+
+  // Re-run risk engine whenever scenario params change
+  useEffect(() => {
+    const output = runRiskEngine(JAMMU_HOTSPOTS, scenarioParams);
+    setEngineOutput(output);
+  }, [scenarioParams]);
 
   // Check backend connectivity on mount
   useEffect(() => {
@@ -94,9 +115,19 @@ export default function NallahPulseDashboard() {
         console.error("Backend is not accessible:", error);
       }
     };
-
     checkBackendHealth();
   }, [API_BASE_URL]);
+
+  // Select hotspot by ID (used by risk engine triage list)
+  const handleHotspotSelectById = useCallback((hotspotId: string) => {
+    const h = JAMMU_HOTSPOTS.find((hs) => hs.id === hotspotId);
+    if (h) {
+      setSelectedHotspot(h);
+      setSelectedLocation([h.latitude, h.longitude]);
+      setInputLat(h.latitude.toFixed(6));
+      setInputLng(h.longitude.toFixed(6));
+    }
+  }, []);
 
   // Default map center (Jammu, Jammu & Kashmir)
   const defaultCenter: [number, number] = [32.7266, 74.8570];
@@ -458,26 +489,30 @@ export default function NallahPulseDashboard() {
               </div>
             </Card>
 
-            {/* Quick Hotspot Selector Bar */}
+            {/* Quick Hotspot Selector Bar - now shows DYNAMIC risk scores from engine */}
             <Card className="border-slate-200 bg-white p-3 shadow-sm">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Jammu Monitored Hotspot Index ({JAMMU_HOTSPOTS.length})
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Activity className="h-3.5 w-3.5 text-blue-600" />
+                  Live Risk Index ({JAMMU_HOTSPOTS.length} nodes)
                 </span>
                 <span className="text-[11px] text-slate-500">
-                  Click to inspect local profile
+                  Dynamic scores from scenario
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {JAMMU_HOTSPOTS.map((h) => {
-                  const category = getInitialDisplayLevel(h);
-                  const styles = getRiskCategoryStyles(category);
-                  const isSelected = selectedHotspot?.id === h.id;
+                {engineOutput.results.map((result) => {
+                  const alertStyles = getAlertStatusStyles(result.alertStatus);
+                  const isSelected = selectedHotspot?.id === result.hotspotId;
+                  const h = JAMMU_HOTSPOTS.find((hs) => hs.id === result.hotspotId)!;
 
                   return (
                     <button
-                      key={h.id}
-                      onClick={() => handleHotspotSelect(h)}
+                      key={result.hotspotId}
+                      onClick={() => {
+                        handleHotspotSelect(h);
+                        setActivePanelTab("engine");
+                      }}
                       className={`text-xs px-2.5 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 border ${
                         isSelected
                           ? "bg-blue-600 text-white border-blue-600 shadow-sm"
@@ -485,18 +520,30 @@ export default function NallahPulseDashboard() {
                       }`}
                     >
                       <span
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: isSelected ? "#ffffff" : styles.color }}
-                      ></span>
-                      <span>{h.name}</span>
+                        className={`w-2 h-2 rounded-full ${result.alertStatus === "RED" ? "animate-pulse" : ""}`}
+                        style={{ backgroundColor: isSelected ? "#ffffff" : undefined }}
+                        data-status={result.alertStatus}
+                      >
+                        {/* colored dot via inline style when not selected */}
+                      </span>
                       <span
-                        className={`text-[10px] px-1 py-0.2 rounded font-semibold ${
-                          isSelected
-                            ? "bg-blue-700 text-blue-100"
-                            : styles.badgeClass
+                        className="w-2 h-2 rounded-full -ml-3.5"
+                        style={{
+                          backgroundColor: isSelected
+                            ? "#ffffff"
+                            : result.alertStatus === "RED" ? "#dc2626"
+                            : result.alertStatus === "ORANGE" ? "#f97316"
+                            : result.alertStatus === "YELLOW" ? "#f59e0b"
+                            : "#10b981",
+                        }}
+                      />
+                      <span>{result.hotspotName}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                          isSelected ? "bg-blue-700 text-blue-100" : alertStyles.badge
                         }`}
                       >
-                        {category}
+                        {result.dynamicScore}
                       </span>
                     </button>
                   );
@@ -505,11 +552,11 @@ export default function NallahPulseDashboard() {
             </Card>
           </div>
 
-          {/* Right Column: Hotspot Details & Analysis Panel (5 cols on lg) */}
+          {/* Right Column: Intelligence Panel (5 cols on lg) */}
           <div className="lg:col-span-5 space-y-4">
             <Card className="border-slate-200 bg-white shadow-sm">
               <CardHeader className="p-4 pb-2 border-b border-slate-100">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-blue-600" />
                     <CardTitle className="text-base font-bold text-slate-900">
@@ -518,15 +565,19 @@ export default function NallahPulseDashboard() {
                   </div>
                   <Tabs
                     value={activePanelTab}
-                    onValueChange={(val) => setActivePanelTab(val as "hotspot" | "custom")}
+                    onValueChange={(val) => setActivePanelTab(val as "hotspot" | "custom" | "engine")}
                     className="w-auto"
                   >
                     <TabsList className="h-7 text-xs bg-slate-100 p-0.5">
-                      <TabsTrigger value="hotspot" className="text-xs px-2.5 py-1">
-                        Hotspot Profile
+                      <TabsTrigger value="engine" className="text-xs px-2 py-1 flex items-center gap-1">
+                        <Zap className="h-3 w-3 text-yellow-500" />
+                        Risk Engine
                       </TabsTrigger>
-                      <TabsTrigger value="custom" className="text-xs px-2.5 py-1">
-                        Custom Coordinates
+                      <TabsTrigger value="hotspot" className="text-xs px-2 py-1">
+                        Hotspot
+                      </TabsTrigger>
+                      <TabsTrigger value="custom" className="text-xs px-2 py-1">
+                        Coordinates
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
@@ -534,6 +585,19 @@ export default function NallahPulseDashboard() {
               </CardHeader>
 
               <CardContent className="p-4 space-y-4">
+                {/* Phase 3: Risk Engine + Rainfall Simulator Tab */}
+                {activePanelTab === "engine" && (
+                  <RainfallSimulator
+                    params={scenarioParams}
+                    engineOutput={engineOutput}
+                    onParamsChange={setScenarioParams}
+                    onSelectHotspot={(id) => {
+                      handleHotspotSelectById(id);
+                    }}
+                    selectedHotspotId={selectedHotspot?.id}
+                  />
+                )}
+
                 {activePanelTab === "hotspot" && selectedHotspot ? (
                   /* Hotspot Detail Panel */
                   <div className="space-y-4">
@@ -742,9 +806,9 @@ export default function NallahPulseDashboard() {
                   <div className="text-center py-12 text-slate-400 text-xs space-y-2">
                     <MapPin className="h-8 w-8 mx-auto text-slate-300" />
                     <p className="font-medium text-slate-600">No Hotspot Selected</p>
-                    <p>Select any pin on the map or click a location from the index below.</p>
+                    <p>Select any pin on the map or click a hotspot from the index below.</p>
                   </div>
-                ) : (
+                ) : activePanelTab !== "engine" ? (
                   /* Custom Coordinates & Image Analysis Tab */
                   <div className="space-y-4">
                     <Tabs
@@ -954,7 +1018,7 @@ export default function NallahPulseDashboard() {
                       </div>
                     )}
                   </div>
-                )}
+                ) : null}
               </CardContent>
             </Card>
           </div>
