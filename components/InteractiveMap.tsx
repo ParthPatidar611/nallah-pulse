@@ -18,6 +18,7 @@ const ClientOnlyMap = dynamic(() => import("./ClientMap"), {
 
 import { JammuHotspot, JammuDrainageCorridor } from "@/lib/data/jammuHotspots";
 import { HotspotRiskResult } from "@/lib/riskEngine";
+import { HotspotPriorityResult } from "@/lib/priorityEngine";
 
 interface MapProps {
   center: [number, number];
@@ -31,6 +32,7 @@ interface MapProps {
   drainageCorridors?: JammuDrainageCorridor[];
   showDrainageCorridors?: boolean;
   riskResults?: HotspotRiskResult[];
+  priorityResults?: HotspotPriorityResult[];
 }
 
 export default function InteractiveMap(props: MapProps) {

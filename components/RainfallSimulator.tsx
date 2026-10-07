@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * NallahPulse - Rainfall Scenario Simulator Panel (Phase 3)
- * Interactive operator control panel that feeds the risk engine.
+ * NallahPulse - Rainfall Scenario Simulator & Intervention Priority Panel (Phase 4)
+ * Interactive operator control panel that feeds the risk and priority engines.
  */
 
 import React from "react";
@@ -15,19 +15,23 @@ import {
   AlertStatus,
 } from "@/lib/riskEngine";
 import {
+  PriorityEngineOutput,
+  HotspotPriorityResult,
+  getPriorityStyles,
+} from "@/lib/priorityEngine";
+import {
   Droplets,
   Clock,
   CloudRain,
   Sliders,
   AlertTriangle,
-  CheckCircle,
   TrendingUp,
-  TrendingDown,
-  Minus,
   Zap,
   Wind,
   Activity,
   Info,
+  Shield,
+  Check,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────
@@ -47,7 +51,15 @@ interface SliderControlProps {
 }
 
 function SliderControl({
-  label, value, min, max, step, unit, icon, onChange, color = "#3b82f6",
+  label,
+  value,
+  min,
+  max,
+  step,
+  unit,
+  icon,
+  onChange,
+  color = "#3b82f6",
 }: SliderControlProps) {
   const pct = ((value - min) / (max - min)) * 100;
   return (
@@ -80,7 +92,9 @@ function SliderControl({
       </div>
       <div className="flex justify-between text-[10px] text-slate-400">
         <span>{min}</span>
-        <span>{max} {unit}</span>
+        <span>
+          {max} {unit}
+        </span>
       </div>
     </div>
   );
@@ -98,7 +112,13 @@ interface ButtonGroupProps<T extends string> {
   icon?: React.ReactNode;
 }
 
-function ButtonGroup<T extends string>({ label, options, value, onChange, icon }: ButtonGroupProps<T>) {
+function ButtonGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  icon,
+}: ButtonGroupProps<T>) {
   return (
     <div className="space-y-1.5">
       <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
@@ -141,7 +161,7 @@ function CityAlertBanner({ status, cityScore }: { status: AlertStatus; cityScore
           <div className={`text-sm font-extrabold ${styles.lightText} uppercase tracking-wide`}>
             {styles.label}
           </div>
-          <div className="text-[11px] text-slate-500">City-wide composite score</div>
+          <div className="text-[11px] text-slate-500">City-wide composite risk level</div>
         </div>
       </div>
       <div className={`text-2xl font-black ${styles.lightText} tabular-nums`}>{cityScore}</div>
@@ -150,72 +170,63 @@ function CityAlertBanner({ status, cityScore }: { status: AlertStatus; cityScore
 }
 
 // ─────────────────────────────────────────────────────────────
-// Sub-component: Hotspot Risk Row in triage list
+// Sub-component: Municipal Priority Row (Part 9)
 // ─────────────────────────────────────────────────────────────
 
-function HotspotRiskRow({
-  result,
+function MunicipalPriorityRow({
+  priority,
   isSelected,
   onClick,
 }: {
-  result: EngineOutput["results"][number];
+  priority: HotspotPriorityResult;
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const styles = getAlertStatusStyles(result.alertStatus);
-  const TrendIcon =
-    result.trendIndicator === "WORSENING"
-      ? TrendingUp
-      : result.trendIndicator === "IMPROVING"
-      ? TrendingDown
-      : Minus;
-  const trendColor =
-    result.trendIndicator === "WORSENING"
-      ? "text-red-500"
-      : result.trendIndicator === "IMPROVING"
-      ? "text-emerald-500"
-      : "text-slate-400";
+  const styles = getPriorityStyles(priority.priorityTier);
 
   return (
     <button
       onClick={onClick}
       className={`w-full text-left p-2.5 rounded-lg border transition-all text-xs ${
         isSelected
-          ? "bg-blue-50 border-blue-200 shadow-sm"
+          ? "bg-blue-50 border-blue-400 shadow-sm ring-1 ring-blue-300"
           : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50"
       }`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${styles.dot} ${
-              result.alertStatus === "RED" ? "animate-pulse" : ""
-            }`}
-          />
-          <span className="font-semibold text-slate-800 truncate">{result.hotspotName}</span>
-          <TrendIcon className={`h-3 w-3 flex-shrink-0 ${trendColor}`} />
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {result.estimatedInundationDepthCm > 0 && (
-            <span className="text-[10px] text-blue-600 font-medium">
-              ~{result.estimatedInundationDepthCm}cm
-            </span>
-          )}
-          <span
-            className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${styles.badge}`}
+            className={`px-1.5 py-0.5 rounded text-[10px] font-black text-white ${styles.badge} flex-shrink-0`}
           >
-            {result.dynamicScore}
+            #{priority.rank}
+          </span>
+          <div className="truncate">
+            <span className="font-bold text-slate-900">{priority.hotspotName}</span>
+            <span className="text-[10px] text-slate-500 ml-1.5">({priority.locality})</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            Risk {priority.riskScore}
+          </span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded font-extrabold ${styles.badge}`}>
+            Priority {priority.priorityScore}
           </span>
         </div>
       </div>
-      {result.estimatedResponseTimeMin < 999 && (
-        <div className="mt-1 text-[10px] text-slate-500 pl-4">
-          Response window:{" "}
-          <span className="font-semibold text-slate-700">
-            {result.estimatedResponseTimeMin}min
+
+      <div className="mt-2 flex items-center justify-between gap-2 text-[10px] text-slate-600 pl-7">
+        <div className="truncate">
+          <span className="text-slate-400">Driver:</span>{" "}
+          <span className="font-semibold text-slate-700">{priority.primaryDriver}</span>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <span className="font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+            {priority.shortAction}
           </span>
         </div>
-      )}
+      </div>
     </button>
   );
 }
@@ -227,6 +238,7 @@ function HotspotRiskRow({
 interface RainfallSimulatorProps {
   params: ScenarioParams;
   engineOutput: EngineOutput;
+  priorityOutput: PriorityEngineOutput;
   onParamsChange: (params: ScenarioParams) => void;
   onSelectHotspot: (hotspotId: string) => void;
   selectedHotspotId?: string;
@@ -235,6 +247,7 @@ interface RainfallSimulatorProps {
 export default function RainfallSimulator({
   params,
   engineOutput,
+  priorityOutput,
   onParamsChange,
   onSelectHotspot,
   selectedHotspotId,
@@ -245,7 +258,6 @@ export default function RainfallSimulator({
   const seasons: Season[] = ["Pre-Monsoon", "Peak-Monsoon", "Post-Monsoon", "Winter"];
   const blockageOptions: BlockageOverride[] = ["Normal", "Partially Cleared", "Blocked"];
 
-  // Rainfall intensity label helper
   const rainfallLabel = (mmh: number): string => {
     if (mmh === 0) return "Dry";
     if (mmh <= 5) return "Light";
@@ -257,6 +269,7 @@ export default function RainfallSimulator({
   };
 
   const selectedResult = engineOutput.results.find((r) => r.hotspotId === selectedHotspotId);
+  const selectedPriority = priorityOutput.results.find((r) => r.hotspotId === selectedHotspotId);
 
   return (
     <div className="space-y-4">
@@ -267,12 +280,14 @@ export default function RainfallSimulator({
       />
 
       {/* Scenario Controls */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-          <Sliders className="h-4 w-4 text-blue-600" />
-          <span className="text-sm font-bold text-slate-800">Rainfall Scenario Simulator</span>
-          <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-semibold ml-auto">
-            PROTOTYPE
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sliders className="h-4 w-4 text-blue-600" />
+            <span className="text-sm font-bold text-slate-800">Rainfall Scenario Simulator</span>
+          </div>
+          <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded font-semibold">
+            PROTOTYPE ENGINE
           </span>
         </div>
 
@@ -350,7 +365,7 @@ export default function RainfallSimulator({
           <div className="flex items-center justify-between py-1">
             <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
               <Zap className="h-3.5 w-3.5 text-yellow-500" />
-              Flash Storm Event
+              Flash Storm Event (Rapid Runoff)
             </span>
             <button
               onClick={() => update({ isFlashEvent: !params.isFlashEvent })}
@@ -378,80 +393,220 @@ export default function RainfallSimulator({
           <div className="flex items-center gap-2 mb-2">
             <Activity className="h-4 w-4 text-slate-600" />
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Recommended Actions
+              Field Deployment Recommendations
             </span>
           </div>
           {engineOutput.recommendedDeployments.map((msg, i) => (
             <div key={i} className="flex items-start gap-2 text-[11px] text-slate-700">
-              <span className="mt-0.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-slate-500 mt-1" />
+              <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-slate-500" />
               <span>{msg}</span>
             </div>
           ))}
         </div>
       )}
 
-      {/* Priority Triage List */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      {/* City Response Overview (Part 16) */}
+      <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-sm">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <Activity className="h-3.5 w-3.5 text-blue-600" />
+            City Response Overview
+          </span>
+          <span className="text-[10px] text-slate-400 font-medium">Intervention Tiers</span>
+        </div>
+        <div className="grid grid-cols-4 gap-1.5 text-center">
+          <div className="p-2 rounded-lg bg-red-50 border border-red-200">
+            <div className="text-lg font-black text-red-700 leading-none">
+              {priorityOutput.summary.immediateCount}
+            </div>
+            <div className="text-[10px] font-bold text-red-800 mt-1 uppercase">Immediate</div>
+          </div>
+          <div className="p-2 rounded-lg bg-orange-50 border border-orange-200">
+            <div className="text-lg font-black text-orange-700 leading-none">
+              {priorityOutput.summary.highPriorityCount}
+            </div>
+            <div className="text-[10px] font-bold text-orange-800 mt-1 uppercase">High</div>
+          </div>
+          <div className="p-2 rounded-lg bg-amber-50 border border-amber-200">
+            <div className="text-lg font-black text-amber-700 leading-none">
+              {priorityOutput.summary.monitorCount}
+            </div>
+            <div className="text-[10px] font-bold text-amber-800 mt-1 uppercase">Monitor</div>
+          </div>
+          <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+            <div className="text-lg font-black text-emerald-700 leading-none">
+              {priorityOutput.summary.lowPriorityCount}
+            </div>
+            <div className="text-[10px] font-bold text-emerald-800 mt-1 uppercase">Low</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Municipal Intervention Priority List (Part 9) */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-bold text-slate-800">Priority Triage</span>
+            <div>
+              <span className="text-sm font-bold text-slate-900 block leading-tight">
+                MUNICIPAL INTERVENTION PRIORITY
+              </span>
+              <span className="text-[10px] text-slate-500">
+                Actionable triage ranked by priority score
+              </span>
+            </div>
           </div>
-          <span className="text-[10px] text-slate-500 font-medium">
-            Sorted by dynamic risk score
+          <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold border border-slate-200">
+            10 Nodes
           </span>
         </div>
-        <div className="p-3 space-y-1.5 max-h-72 overflow-y-auto">
-          {engineOutput.results.map((result) => (
-            <HotspotRiskRow
-              key={result.hotspotId}
-              result={result}
-              isSelected={selectedHotspotId === result.hotspotId}
-              onClick={() => onSelectHotspot(result.hotspotId)}
+        <div className="p-3 space-y-1.5 max-h-80 overflow-y-auto">
+          {priorityOutput.results.map((priority) => (
+            <MunicipalPriorityRow
+              key={priority.hotspotId}
+              priority={priority}
+              isSelected={selectedHotspotId === priority.hotspotId}
+              onClick={() => onSelectHotspot(priority.hotspotId)}
             />
           ))}
         </div>
       </div>
 
-      {/* Selected Hotspot Score Breakdown */}
-      {selectedResult && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-            <Info className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-bold text-slate-800">
-              Score Breakdown — {selectedResult.hotspotName}
+      {/* Selected Hotspot Decision Card & Breakdown (Part 8, Part 17, Part 20) */}
+      {selectedPriority && (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-bold text-slate-800">
+                Decision Support — {selectedPriority.hotspotName}
+              </span>
+            </div>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${
+                getPriorityStyles(selectedPriority.priorityTier).badge
+              }`}
+            >
+              Rank #{selectedPriority.rank} &bull; {selectedPriority.priorityLabel}
             </span>
           </div>
-          <div className="p-4 space-y-2">
-            {[
-              { label: "Rainfall Contribution", val: selectedResult.scoreBreakdown.rainfallContribution, color: "#3b82f6" },
-              { label: "Drainage Vulnerability", val: selectedResult.scoreBreakdown.drainageContribution, color: "#f97316" },
-              { label: "Historical Risk", val: selectedResult.scoreBreakdown.historicalContribution, color: "#6366f1" },
-              { label: "Blockage Factor", val: selectedResult.scoreBreakdown.blockageContribution, color: "#f59e0b" },
-              { label: "Terrain Factor", val: selectedResult.scoreBreakdown.terrainContribution, color: "#10b981" },
-              { label: "Antecedent Moisture", val: selectedResult.scoreBreakdown.antecedentContribution, color: "#06b6d4" },
-            ].map(({ label, val, color }) => (
-              <div key={label}>
-                <div className="flex justify-between text-[11px] mb-0.5">
-                  <span className="text-slate-600">{label}</span>
-                  <span className="font-bold text-slate-900">+{val}</span>
+
+          <div className="p-4 space-y-3.5">
+            {/* Risk vs Priority Side-by-Side Comparison */}
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                  Waterlogging Risk
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl font-black text-slate-900">
+                    {selectedPriority.riskScore}
+                  </span>
+                  <span className="text-[10px] text-slate-500">/ 100</span>
                 </div>
-                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, (val / 30) * 100)}%`, backgroundColor: color }}
-                  />
+                <div className="text-[11px] font-bold text-red-600 mt-0.5">
+                  {selectedPriority.riskCategory} RISK
                 </div>
               </div>
-            ))}
-            <div className="pt-2 border-t border-slate-100 flex justify-between text-xs font-bold">
-              <span className="text-slate-700">Total Dynamic Score</span>
-              <span className="text-slate-900">{selectedResult.dynamicScore} / 100</span>
+
+              <div className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-200">
+                <span className="text-[10px] uppercase font-bold text-blue-800 tracking-wider">
+                  Municipal Priority
+                </span>
+                <div className="flex items-baseline gap-1 mt-0.5">
+                  <span className="text-xl font-black text-blue-900">
+                    {selectedPriority.priorityScore}
+                  </span>
+                  <span className="text-[10px] text-slate-500">/ 100</span>
+                </div>
+                <div
+                  className="text-[11px] font-extrabold mt-0.5"
+                  style={{ color: getPriorityStyles(selectedPriority.priorityTier).color }}
+                >
+                  {selectedPriority.priorityLabel}
+                </div>
+              </div>
             </div>
-            {selectedResult.estimatedInundationDepthCm > 0 && (
-              <div className="mt-1 p-2 bg-blue-50 rounded-lg text-[11px] text-blue-800 border border-blue-200">
-                <span className="font-bold">Est. inundation depth:</span>{" "}
-                ~{selectedResult.estimatedInundationDepthCm} cm (prototype proxy)
+
+            {/* Prototype Weighting Breakdown */}
+            <div className="p-2.5 rounded-lg bg-slate-50/70 border border-slate-200 text-[11px] space-y-1.5">
+              <div className="flex items-center justify-between font-semibold text-slate-700">
+                <span>Priority Drivers (Prototype Weights)</span>
+                <span className="text-[10px] text-slate-400">Total: {selectedPriority.priorityScore}/100</span>
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-slate-600">
+                <div>
+                  Live Risk (60%):{" "}
+                  <strong className="text-slate-900">+{selectedPriority.driverBreakdown.riskComponent} pts</strong>
+                </div>
+                <div>
+                  Urban Impact (20%):{" "}
+                  <strong className="text-slate-900">+{selectedPriority.driverBreakdown.populationComponent} pts</strong>
+                </div>
+                <div>
+                  Blockage (10%):{" "}
+                  <strong className="text-slate-900">+{selectedPriority.driverBreakdown.blockageComponent} pts</strong>
+                </div>
+                <div>
+                  Drainage Vuln (10%):{" "}
+                  <strong className="text-slate-900">+{selectedPriority.driverBreakdown.drainageComponent} pts</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Deterministic Prioritization Rationale (Part 17) */}
+            <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+              <strong className="font-bold">Prioritization Rationale:</strong>{" "}
+              {selectedPriority.priorityExplanation}
+            </div>
+
+            {/* Recommended Prototype Action (Part 7, 8, 20) */}
+            <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wide">
+                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                Recommended Prototype Action
+              </div>
+              <p className="text-xs text-emerald-900 leading-relaxed font-medium">
+                {selectedPriority.recommendedAction}
+              </p>
+            </div>
+
+            {/* Detailed Risk Factor Contributions */}
+            {selectedResult && (
+              <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Physical Factor Breakdown
+                  </span>
+                  {selectedResult.estimatedInundationDepthCm > 0 && (
+                    <span className="text-[10px] text-blue-700 font-bold">
+                      Est. Inundation: ~{selectedResult.estimatedInundationDepthCm} cm
+                    </span>
+                  )}
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    { label: "Rainfall Contribution", val: selectedResult.scoreBreakdown.rainfallContribution, color: "#3b82f6" },
+                    { label: "Drainage Vulnerability", val: selectedResult.scoreBreakdown.drainageContribution, color: "#f97316" },
+                    { label: "Historical Risk", val: selectedResult.scoreBreakdown.historicalContribution, color: "#6366f1" },
+                    { label: "Blockage Factor", val: selectedResult.scoreBreakdown.blockageContribution, color: "#f59e0b" },
+                    { label: "Terrain Factor", val: selectedResult.scoreBreakdown.terrainContribution, color: "#10b981" },
+                    { label: "Antecedent Moisture", val: selectedResult.scoreBreakdown.antecedentContribution, color: "#06b6d4" },
+                  ].map(({ label, val, color }) => (
+                    <div key={label}>
+                      <div className="flex justify-between text-[10px] mb-0.5">
+                        <span className="text-slate-600">{label}</span>
+                        <span className="font-bold text-slate-900">+{val}</span>
+                      </div>
+                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, (val / 30) * 100)}%`, backgroundColor: color }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -460,7 +615,7 @@ export default function RainfallSimulator({
 
       {/* Prototype Disclaimer */}
       <p className="text-[10px] text-slate-400 text-center">
-        Prototype demonstration model — not official engineering data.
+        Prototype demonstration decision support &bull; Not an official JMC operational dispatch.
       </p>
     </div>
   );

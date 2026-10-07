@@ -33,6 +33,13 @@ import {
   getAlertStatusStyles,
 } from "@/lib/riskEngine";
 import {
+  runPriorityEngine,
+  PriorityEngineOutput,
+  HotspotPriorityResult,
+  getPriorityStyles,
+  getPriorityTier,
+} from "@/lib/priorityEngine";
+import {
   MapPin,
   AlertTriangle,
   CheckCircle,
@@ -96,6 +103,12 @@ export default function NallahPulseDashboard() {
   const kpiData = useMemo(
     () => getHotspotKPIs(JAMMU_HOTSPOTS, engineOutput.results),
     [engineOutput.results]
+  );
+
+  // Phase 4: Priority Engine output strictly consuming live risk engine results
+  const priorityOutput = useMemo(
+    () => runPriorityEngine(JAMMU_HOTSPOTS, engineOutput.results, scenarioParams),
+    [engineOutput.results, scenarioParams]
   );
 
   // Re-run risk engine whenever scenario params change
@@ -353,63 +366,69 @@ export default function NallahPulseDashboard() {
             </CardContent>
           </Card>
 
+          {/* Part 11: Top Priority Location KPI */}
           <Card className="border-red-200/80 bg-red-50/30 shadow-sm hover:border-red-300 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-red-700 uppercase tracking-wider">
-                  Critical Zones
+                  Top Priority Location
                 </span>
                 <div className="p-1.5 bg-red-100 text-red-600 rounded-md">
-                  <AlertTriangle className="h-4 w-4" />
+                  <Shield className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-red-700">
-                  {kpiData.criticalCount}
+              <div className="mt-2 flex items-baseline gap-2 truncate">
+                <span className="text-xl font-extrabold text-red-800 truncate">
+                  {priorityOutput.summary.topPriorityHotspot?.hotspotName || "N/A"}
                 </span>
-                <span className="text-xs text-red-600 font-medium">high vulnerability</span>
               </div>
-              <p className="text-[11px] text-red-600/80 mt-1">Requires preventive desilting</p>
+              <p className="text-[11px] text-red-700 font-medium mt-1 truncate">
+                {priorityOutput.summary.topPriorityHotspot
+                  ? `Rank #1 • Priority ${priorityOutput.summary.topPriorityHotspot.priorityScore}/100 • ${priorityOutput.summary.topPriorityHotspot.priorityLabel}`
+                  : "Routine baseline"}
+              </p>
             </CardContent>
           </Card>
 
+          {/* Part 12: Immediate Interventions KPI */}
           <Card className="border-orange-200/80 bg-orange-50/30 shadow-sm hover:border-orange-300 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-orange-700 uppercase tracking-wider">
-                  High Risk Zones
+                  Immediate Interventions
                 </span>
                 <div className="p-1.5 bg-orange-100 text-orange-600 rounded-md">
-                  <TrendingUp className="h-4 w-4" />
+                  <AlertTriangle className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-orange-700">
-                  {kpiData.highCount}
+                  {priorityOutput.summary.immediateCount}
                 </span>
-                <span className="text-xs text-orange-600 font-medium">elevated tendency</span>
+                <span className="text-xs text-orange-600 font-medium">urgent deployments</span>
               </div>
-              <p className="text-[11px] text-orange-600/80 mt-1">Watchlist for monsoon surge</p>
+              <p className="text-[11px] text-orange-600/80 mt-1">Priority score &ge; 80 cohort</p>
             </CardContent>
           </Card>
 
+          {/* Critical Risk Zones KPI */}
           <Card className="border-blue-200 bg-blue-50/30 shadow-sm hover:border-blue-300 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-blue-800 uppercase tracking-wider">
-                  Immediate Attention
+                  Critical Risk Zones
                 </span>
                 <div className="p-1.5 bg-blue-100 text-blue-700 rounded-md">
-                  <Shield className="h-4 w-4" />
+                  <TrendingUp className="h-4 w-4" />
                 </div>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-blue-800">
-                  {kpiData.attentionCount}
+                  {kpiData.criticalCount}
                 </span>
-                <span className="text-xs text-blue-600">Critical + High priority</span>
+                <span className="text-xs text-blue-600 font-medium">severe flood risk</span>
               </div>
-              <p className="text-[11px] text-blue-600 mt-1">Priority intervention cohort</p>
+              <p className="text-[11px] text-blue-600 mt-1">Simulated risk score &ge; 78</p>
             </CardContent>
           </Card>
         </div>
@@ -460,6 +479,7 @@ export default function NallahPulseDashboard() {
                   drainageCorridors={JAMMU_DRAINAGE_CORRIDORS}
                   showDrainageCorridors={showDrainageCorridors}
                   riskResults={engineOutput.results}
+                  priorityResults={priorityOutput.results}
                 />
               </CardContent>
 
@@ -488,31 +508,31 @@ export default function NallahPulseDashboard() {
                 </div>
 
                 <span className="text-[11px] text-slate-400">
-                  Illustrative Prototype Drainage Layer
+                  Illustrative Prototype Drainage Layer &bull; Risk &amp; Priority Integrated
                 </span>
               </div>
             </Card>
 
-            {/* Quick Hotspot Selector Bar - now shows DYNAMIC risk scores from engine */}
+            {/* Quick Hotspot Selector Bar - now shows dynamic priority ranks & risk scores */}
             <Card className="border-slate-200 bg-white p-3 shadow-sm">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <Activity className="h-3.5 w-3.5 text-blue-600" />
-                  Live Risk Index ({JAMMU_HOTSPOTS.length} nodes)
+                  Live Intervention Index ({JAMMU_HOTSPOTS.length} nodes)
                 </span>
                 <span className="text-[11px] text-slate-500">
-                  Dynamic scores from scenario
+                  Ranked by Municipal Priority Score
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {engineOutput.results.map((result) => {
-                  const alertStyles = getAlertStatusStyles(result.alertStatus);
-                  const isSelected = selectedHotspot?.id === result.hotspotId;
-                  const h = JAMMU_HOTSPOTS.find((hs) => hs.id === result.hotspotId)!;
+                {priorityOutput.results.map((priority) => {
+                  const pStyles = getPriorityStyles(priority.priorityTier);
+                  const isSelected = selectedHotspot?.id === priority.hotspotId;
+                  const h = JAMMU_HOTSPOTS.find((hs) => hs.id === priority.hotspotId)!;
 
                   return (
                     <button
-                      key={result.hotspotId}
+                      key={priority.hotspotId}
                       onClick={() => {
                         handleHotspotSelect(h);
                         setActivePanelTab("engine");
@@ -524,30 +544,18 @@ export default function NallahPulseDashboard() {
                       }`}
                     >
                       <span
-                        className={`w-2 h-2 rounded-full ${result.alertStatus === "RED" ? "animate-pulse" : ""}`}
-                        style={{ backgroundColor: isSelected ? "#ffffff" : undefined }}
-                        data-status={result.alertStatus}
-                      >
-                        {/* colored dot via inline style when not selected */}
-                      </span>
-                      <span
-                        className="w-2 h-2 rounded-full -ml-3.5"
+                        className={`w-2 h-2 rounded-full ${priority.priorityTier === "IMMEDIATE" ? "animate-pulse" : ""}`}
                         style={{
-                          backgroundColor: isSelected
-                            ? "#ffffff"
-                            : result.alertStatus === "RED" ? "#dc2626"
-                            : result.alertStatus === "ORANGE" ? "#f97316"
-                            : result.alertStatus === "YELLOW" ? "#f59e0b"
-                            : "#10b981",
+                          backgroundColor: isSelected ? "#ffffff" : pStyles.color,
                         }}
                       />
-                      <span>{result.hotspotName}</span>
+                      <span className="font-semibold">{priority.hotspotName}</span>
                       <span
                         className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
-                          isSelected ? "bg-blue-700 text-blue-100" : alertStyles.badge
+                          isSelected ? "bg-blue-700 text-blue-100" : pStyles.lightBadge
                         }`}
                       >
-                        {result.dynamicScore}
+                        #{priority.rank} &bull; P:{priority.priorityScore}
                       </span>
                     </button>
                   );
@@ -589,11 +597,12 @@ export default function NallahPulseDashboard() {
               </CardHeader>
 
               <CardContent className="p-4 space-y-4">
-                {/* Phase 3: Risk Engine + Rainfall Simulator Tab */}
+                {/* Phase 3 & 4: Risk Engine + Rainfall Simulator Tab */}
                 {activePanelTab === "engine" && (
                   <RainfallSimulator
                     params={scenarioParams}
                     engineOutput={engineOutput}
+                    priorityOutput={priorityOutput}
                     onParamsChange={setScenarioParams}
                     onSelectHotspot={(id) => {
                       handleHotspotSelectById(id);
@@ -603,49 +612,133 @@ export default function NallahPulseDashboard() {
                 )}
 
                 {activePanelTab === "hotspot" && selectedHotspot ? (
-                  /* Hotspot Detail Panel */
+                  /* Hotspot Detail & Decision Support Panel (Part 8, Part 20) */
                   <div className="space-y-4">
-                    {/* Hotspot Header */}
-                    <div className="flex items-start justify-between gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200/80">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-lg text-slate-900 leading-tight">
-                            {selectedHotspot.name}
-                          </h3>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {selectedHotspot.locality} &bull; {selectedHotspot.wardZone}
-                        </p>
-                        <div className="text-[11px] text-slate-500 font-mono mt-1">
-                          Coordinates: {selectedHotspot.latitude.toFixed(4)}°N, {selectedHotspot.longitude.toFixed(4)}°E
-                        </div>
-                      </div>
+                    {(() => {
+                      const selectedRisk = engineOutput.results.find((r) => r.hotspotId === selectedHotspot.id);
+                      const selectedPriority = priorityOutput.results.find((r) => r.hotspotId === selectedHotspot.id);
+                      const cat = selectedRisk ? selectedRisk.riskCategory : getInitialDisplayLevel(selectedHotspot);
+                      const riskStyles = getRiskCategoryStyles(cat);
+                      const priorityStyles = selectedPriority ? getPriorityStyles(selectedPriority.priorityTier) : null;
 
-                      <div className="text-right">
-                        {(() => {
-                          const selectedRisk = engineOutput.results.find((r) => r.hotspotId === selectedHotspot.id);
-                          const cat = selectedRisk ? selectedRisk.riskCategory : getInitialDisplayLevel(selectedHotspot);
-                          const styles = getRiskCategoryStyles(cat);
-                          return (
-                            <>
-                              <span
-                                className={`inline-block px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider border ${styles.badgeClass}`}
-                              >
-                                {cat} RISK
-                              </span>
-                              {selectedRisk && (
-                                <div className="text-[11px] font-bold text-slate-700 mt-1">
-                                  Simulated Score: {selectedRisk.dynamicScore}/100
+                      return (
+                        <>
+                          {/* Part 8: Selected Hotspot Decision Card */}
+                          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/90 shadow-sm space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <h3 className="font-extrabold text-lg text-slate-900 leading-tight">
+                                  {selectedHotspot.name}
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                  {selectedHotspot.locality} &bull; {selectedHotspot.wardZone}
+                                </p>
+                                <div className="text-[11px] text-slate-500 font-mono mt-1">
+                                  Coordinates: {selectedHotspot.latitude.toFixed(4)}°N, {selectedHotspot.longitude.toFixed(4)}°E &bull; Elev: {selectedHotspot.elevationMeters}m
+                                </div>
+                              </div>
+
+                              {selectedPriority && (
+                                <div className="text-right flex flex-col items-end gap-1">
+                                  <span
+                                    className={`inline-block px-2.5 py-1 rounded text-xs font-black uppercase tracking-wider ${
+                                      priorityStyles?.badge
+                                    }`}
+                                  >
+                                    RANK #{selectedPriority.rank} &bull; {selectedPriority.priorityLabel}
+                                  </span>
+                                  <span className="text-[10px] text-slate-500">
+                                    Priority Score: <strong>{selectedPriority.priorityScore}/100</strong>
+                                  </span>
                                 </div>
                               )}
-                            </>
-                          );
-                        })()}
-                        <div className="text-[10px] text-slate-500 mt-0.5">
-                          Elev: {selectedHotspot.elevationMeters}m MSL
-                        </div>
-                      </div>
-                    </div>
+                            </div>
+
+                            {/* Dual Metrics: Risk vs Priority */}
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="p-2.5 rounded-lg bg-white border border-slate-200 shadow-sm">
+                                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                                  Waterlogging Risk
+                                </span>
+                                <div className="flex items-baseline gap-1 mt-0.5">
+                                  <span className="text-xl font-black text-slate-900">
+                                    {selectedRisk ? selectedRisk.dynamicScore : "N/A"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">/ 100</span>
+                                </div>
+                                <div className="text-[11px] font-bold mt-0.5" style={{ color: riskStyles.color }}>
+                                  {cat} RISK
+                                </div>
+                              </div>
+
+                              <div className="p-2.5 rounded-lg bg-blue-50/50 border border-blue-200 shadow-sm">
+                                <span className="text-[10px] uppercase font-bold text-blue-800 tracking-wider">
+                                  Municipal Priority
+                                </span>
+                                <div className="flex items-baseline gap-1 mt-0.5">
+                                  <span className="text-xl font-black text-blue-900">
+                                    {selectedPriority ? selectedPriority.priorityScore : "N/A"}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">/ 100</span>
+                                </div>
+                                <div className="text-[11px] font-extrabold mt-0.5" style={{ color: priorityStyles?.color }}>
+                                  {selectedPriority ? selectedPriority.priorityLabel : "STANDBY"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Priority Drivers (Formula Weights) */}
+                            {selectedPriority && (
+                              <div className="p-2.5 rounded-lg bg-white border border-slate-200 text-[11px] space-y-1.5 shadow-sm">
+                                <div className="flex items-center justify-between font-bold text-slate-700">
+                                  <span>Primary Priority Drivers</span>
+                                  <span className="text-[10px] text-slate-400">Prototype Formula Weights</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-slate-600">
+                                  <div>
+                                    Live Risk (60%):{" "}
+                                    <strong className="text-slate-900">+{selectedPriority.driverBreakdown.riskComponent} pts</strong>
+                                  </div>
+                                  <div>
+                                    Urban Impact (20%):{" "}
+                                    <strong className="text-slate-900">+{selectedPriority.driverBreakdown.populationComponent} pts</strong>
+                                  </div>
+                                  <div>
+                                    Blockage (10%):{" "}
+                                    <strong className="text-slate-900">+{selectedPriority.driverBreakdown.blockageComponent} pts</strong>
+                                  </div>
+                                  <div>
+                                    Drainage (10%):{" "}
+                                    <strong className="text-slate-900">+{selectedPriority.driverBreakdown.drainageComponent} pts</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Deterministic Prioritization Rationale (Part 17) */}
+                            {selectedPriority && (
+                              <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
+                                <strong className="font-bold">Prioritization Rationale:</strong>{" "}
+                                {selectedPriority.priorityExplanation}
+                              </div>
+                            )}
+
+                            {/* Recommended Prototype Action (Part 7, 8, 20) */}
+                            {selectedPriority && (
+                              <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-1 shadow-sm">
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wide">
+                                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                  Recommended Prototype Action
+                                </div>
+                                <p className="text-xs text-emerald-900 leading-relaxed font-medium">
+                                  {selectedPriority.recommendedAction}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     {/* Prototype Data Notice Banner */}
                     <div className="bg-amber-50/70 border border-amber-200/80 rounded-md p-2 text-[11px] text-amber-800 flex items-start gap-1.5">
@@ -811,12 +904,17 @@ export default function NallahPulseDashboard() {
                     {/* Recommended Action */}
                     <div className="space-y-1 text-xs">
                       <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                        Recommended Municipal Action (Prototype)
+                        Dynamic Recommended Action (Scenario-Driven)
                       </h4>
-                      <div className="p-2.5 rounded-md bg-emerald-50/80 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2">
-                        <Check className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
-                        <span>{selectedHotspot.recommendedAction}</span>
-                      </div>
+                      {(() => {
+                        const p = priorityOutput.results.find((item) => item.hotspotId === selectedHotspot.id);
+                        return (
+                          <div className="p-2.5 rounded-md bg-emerald-50/80 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-2">
+                            <Check className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+                            <span>{p ? p.recommendedAction : selectedHotspot.recommendedAction}</span>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     {/* Optional Quick Action to trigger coordinate evaluation */}

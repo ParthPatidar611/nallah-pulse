@@ -22,6 +22,7 @@ import {
   RiskCategory,
 } from "@/lib/data/jammuHotspots";
 import { HotspotRiskResult } from "@/lib/riskEngine";
+import { HotspotPriorityResult, getPriorityStyles } from "@/lib/priorityEngine";
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -46,6 +47,7 @@ interface MapProps {
   drainageCorridors?: JammuDrainageCorridor[];
   showDrainageCorridors?: boolean;
   riskResults?: HotspotRiskResult[];
+  priorityResults?: HotspotPriorityResult[];
 }
 
 // Map updater to smoothly navigate to selected points
@@ -163,6 +165,7 @@ export default function ClientMap({
   drainageCorridors = [],
   showDrainageCorridors = true,
   riskResults,
+  priorityResults,
 }: MapProps) {
   const [clickedLocation, setClickedLocation] = useState<[number, number] | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -269,8 +272,10 @@ export default function ClientMap({
         {/* Prototype Hotspot Markers */}
         {hotspots.map((hotspot) => {
           const dynamicRisk = riskResults?.find((r) => r.hotspotId === hotspot.id);
+          const priority = priorityResults?.find((p) => p.hotspotId === hotspot.id);
           const category = dynamicRisk ? dynamicRisk.riskCategory : getInitialDisplayLevel(hotspot);
           const styles = getRiskCategoryStyles(category);
+          const priorityStyles = priority ? getPriorityStyles(priority.priorityTier) : null;
           const isSelected = selectedHotspot?.id === hotspot.id;
           const markerIcon = createHotspotIcon(category, isSelected);
 
@@ -288,75 +293,87 @@ export default function ClientMap({
               }}
             >
               <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
-                <div className="text-xs font-medium flex items-center gap-1.5">
+                <div className="text-xs font-medium flex items-center gap-1.5 flex-wrap max-w-[220px]">
                   <span
-                    className="w-2 h-2 rounded-full inline-block"
+                    className="w-2 h-2 rounded-full inline-block flex-shrink-0"
                     style={{ backgroundColor: styles.color }}
                   ></span>
-                  <span>{hotspot.name}</span>
+                  <span className="font-semibold text-slate-900">{hotspot.name}</span>
                   {dynamicRisk && (
                     <span className="text-[10px] font-bold text-slate-700">
-                      ({dynamicRisk.dynamicScore})
+                      Risk: {dynamicRisk.dynamicScore}
                     </span>
                   )}
-                  <span
-                    className="text-[10px] font-bold px-1 py-0.2 rounded"
-                    style={{
-                      color: styles.color,
-                      backgroundColor: `${styles.color}15`,
-                    }}
-                  >
-                    {category}
-                  </span>
+                  {priority && (
+                    <span
+                      className="text-[10px] font-bold px-1.5 py-0.2 rounded text-white"
+                      style={{ backgroundColor: priorityStyles?.color || "#3b82f6" }}
+                    >
+                      #{priority.rank} {priority.priorityLabel}
+                    </span>
+                  )}
                 </div>
               </Tooltip>
               <Popup>
-                <div className="text-xs space-y-2 p-1 max-w-[230px]">
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
-                    <div>
+                <div className="text-xs space-y-2 p-1 max-w-[260px]">
+                  <div className="border-b border-slate-100 pb-1.5">
+                    <div className="flex items-center justify-between gap-1">
                       <div className="font-bold text-sm text-slate-900">
                         {hotspot.name}
                       </div>
-                      <div className="text-[11px] text-slate-500">
-                        {hotspot.locality}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-0.5">
-                      <span
-                        className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-                        style={{
-                          backgroundColor: `${styles.color}20`,
-                          color: styles.color,
-                        }}
-                      >
-                        {category}
-                      </span>
-                      {dynamicRisk && (
-                        <span className="text-[10px] font-bold text-slate-700">
-                          Score: {dynamicRisk.dynamicScore}/100
+                      {priority && (
+                        <span
+                          className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider text-white"
+                          style={{ backgroundColor: priorityStyles?.color }}
+                        >
+                          Rank #{priority.rank}
                         </span>
                       )}
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-1 text-[11px] bg-slate-50 p-1.5 rounded">
-                    <div>
-                      Drainage: <strong>{hotspot.drainageVulnerability}/100</strong>
-                    </div>
-                    <div>
-                      Historical: <strong>{hotspot.historicalRisk}/100</strong>
-                    </div>
-                    <div>
-                      Blockage: <strong>{hotspot.blockageFactor}/100</strong>
-                    </div>
-                    <div>
-                      Elevation: <strong>{hotspot.elevationMeters}m</strong>
+                    <div className="text-[11px] text-slate-500">
+                      {hotspot.locality} &bull; {hotspot.wardZone}
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-slate-600 leading-tight">
-                    {hotspot.riskExplanation}
-                  </p>
+                  <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                    <div className="p-1.5 rounded bg-slate-50 border border-slate-200">
+                      <div className="text-slate-500 text-[10px] uppercase font-semibold">Waterlogging Risk</div>
+                      <div className="font-bold text-slate-800">
+                        {dynamicRisk ? `${dynamicRisk.dynamicScore}/100` : "Baseline"}
+                      </div>
+                      <div className="text-[10px] font-medium" style={{ color: styles.color }}>
+                        {category}
+                      </div>
+                    </div>
+
+                    <div className="p-1.5 rounded bg-slate-50 border border-slate-200">
+                      <div className="text-slate-500 text-[10px] uppercase font-semibold">Priority Triage</div>
+                      <div className="font-bold text-slate-800">
+                        {priority ? `${priority.priorityScore}/100` : "N/A"}
+                      </div>
+                      <div className="text-[10px] font-bold" style={{ color: priorityStyles?.color }}>
+                        {priority?.priorityLabel || "STANDBY"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {priority && (
+                    <div className="bg-blue-50/80 p-1.5 rounded border border-blue-200 text-[11px] space-y-0.5">
+                      <div className="font-semibold text-blue-900">
+                        Driver: <span className="font-normal text-slate-700">{priority.primaryDriver}</span>
+                      </div>
+                      <div className="text-slate-700 leading-tight">
+                        <strong>Action:</strong> {priority.recommendedAction}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-1 text-[10px] bg-slate-50/70 p-1 rounded text-slate-600">
+                    <div>Drainage: <strong>{hotspot.drainageVulnerability}</strong></div>
+                    <div>Blockage: <strong>{hotspot.blockageFactor}</strong></div>
+                    <div>Urban Impact: <strong>{hotspot.populationImpactProxy}</strong></div>
+                    <div>Elev: <strong>{hotspot.elevationMeters}m</strong></div>
+                  </div>
 
                   <button
                     onClick={() => {
@@ -364,13 +381,13 @@ export default function ClientMap({
                         onHotspotSelect(hotspot);
                       }
                     }}
-                    className="w-full text-center py-1 px-2 text-[11px] font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
+                    className="w-full text-center py-1.5 px-2 text-[11px] font-bold bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
                   >
-                    Inspect Factor Breakdown
+                    Select Hotspot &amp; View Triage
                   </button>
 
                   <div className="text-[10px] text-slate-400 text-center">
-                    Prototype Data &bull; Demonstrative Hotspot
+                    Prototype Data &bull; Demonstration Decision Model
                   </div>
                 </div>
               </Popup>
