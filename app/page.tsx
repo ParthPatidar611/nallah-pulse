@@ -334,17 +334,42 @@ export default function NallahPulseDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
-        {/* Subtitle & Mission Statement */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200/80 shadow-sm">
-          <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
-            <strong className="text-slate-800 font-semibold">NallahPulse</strong> is a prototype urban drainage intelligence system for Jammu that evaluates drainage vulnerability, identifies waterlogging tendencies, and helps prioritize municipal intervention.
-          </p>
-          <div className="text-xs text-slate-500 font-medium whitespace-nowrap bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-            Region: <span className="text-blue-700 font-bold">Jammu Municipal Area (JMC)</span>
+        {/* Mission Statement & Standard Prototype System Disclosure (Part 1 & Part 3) */}
+        <div className="space-y-2">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <div>
+              <p className="text-sm text-slate-700 leading-relaxed font-medium">
+                <strong className="text-slate-900 font-bold">NallahPulse</strong> is an operational decision-support prototype for Jammu that evaluates urban drainage vulnerability, simulates waterlogging risk scenarios, and prioritizes municipal interventions.
+              </p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <span className="font-bold text-blue-700">Jammu Municipal Corporation (JMC) Area</span>
+                <span>&bull;</span>
+                <span>10 Monitored Hotspot Nodes</span>
+                <span>&bull;</span>
+                <span>Illustrative Drainage Corridors</span>
+              </div>
+            </div>
+            <div className="text-xs text-slate-600 font-semibold whitespace-nowrap bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 flex items-center gap-2 self-start md:self-auto">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Operational Dashboard</span>
+            </div>
+          </div>
+
+          {/* Standard Prototype Disclaimer (Part 3) */}
+          <div className="bg-amber-50/70 border border-amber-200/80 rounded-lg px-3 py-2 text-[11px] text-amber-900 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 text-amber-700 flex-shrink-0" />
+              <span>
+                <strong>Prototype System Disclosure:</strong> Values shown are research demonstration data and are not official municipal warnings, forecasts, or emergency dispatch orders.
+              </span>
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100/90 px-1.5 py-0.5 rounded border border-amber-300 flex-shrink-0">
+              DEMONSTRATION DATA
+            </span>
           </div>
         </div>
 
-        {/* KPI Operations Summary Bar */}
+        {/* KPI Operations Summary Bar (Part 13) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="border-slate-200 bg-white shadow-sm hover:border-slate-300 transition-colors">
             <CardContent className="p-4">
@@ -366,31 +391,28 @@ export default function NallahPulseDashboard() {
             </CardContent>
           </Card>
 
-          {/* Part 11: Top Priority Location KPI */}
-          <Card className="border-red-200/80 bg-red-50/30 shadow-sm hover:border-red-300 transition-colors">
+          {/* Critical Risk Zones KPI */}
+          <Card className="border-blue-200 bg-blue-50/30 shadow-sm hover:border-blue-300 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-red-700 uppercase tracking-wider">
-                  Top Priority Location
+                <span className="text-xs font-semibold text-blue-800 uppercase tracking-wider">
+                  Critical Risk Zones
                 </span>
-                <div className="p-1.5 bg-red-100 text-red-600 rounded-md">
-                  <Shield className="h-4 w-4" />
+                <div className="p-1.5 bg-blue-100 text-blue-700 rounded-md">
+                  <TrendingUp className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-2 truncate">
-                <span className="text-xl font-extrabold text-red-800 truncate">
-                  {priorityOutput.summary.topPriorityHotspot?.hotspotName || "N/A"}
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-blue-800">
+                  {kpiData.criticalCount}
                 </span>
+                <span className="text-xs text-blue-600 font-medium">high vulnerability</span>
               </div>
-              <p className="text-[11px] text-red-700 font-medium mt-1 truncate">
-                {priorityOutput.summary.topPriorityHotspot
-                  ? `Rank #1 • Priority ${priorityOutput.summary.topPriorityHotspot.priorityScore}/100 • ${priorityOutput.summary.topPriorityHotspot.priorityLabel}`
-                  : "Routine baseline"}
-              </p>
+              <p className="text-[11px] text-blue-600 mt-1">Simulated risk score &ge; 78</p>
             </CardContent>
           </Card>
 
-          {/* Part 12: Immediate Interventions KPI */}
+          {/* Immediate Interventions KPI */}
           <Card className="border-orange-200/80 bg-orange-50/30 shadow-sm hover:border-orange-300 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -411,24 +433,27 @@ export default function NallahPulseDashboard() {
             </CardContent>
           </Card>
 
-          {/* Critical Risk Zones KPI */}
-          <Card className="border-blue-200 bg-blue-50/30 shadow-sm hover:border-blue-300 transition-colors">
+          {/* Top Priority Location KPI */}
+          <Card className="border-red-200/80 bg-red-50/30 shadow-sm hover:border-red-300 transition-colors">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-blue-800 uppercase tracking-wider">
-                  Critical Risk Zones
+                <span className="text-xs font-semibold text-red-700 uppercase tracking-wider">
+                  Top Priority Location
                 </span>
-                <div className="p-1.5 bg-blue-100 text-blue-700 rounded-md">
-                  <TrendingUp className="h-4 w-4" />
+                <div className="p-1.5 bg-red-100 text-red-600 rounded-md">
+                  <Shield className="h-4 w-4" />
                 </div>
               </div>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-blue-800">
-                  {kpiData.criticalCount}
+              <div className="mt-2 flex items-baseline gap-2 truncate">
+                <span className="text-xl font-extrabold text-red-800 truncate">
+                  {priorityOutput.summary.topPriorityHotspot?.hotspotName || "N/A"}
                 </span>
-                <span className="text-xs text-blue-600 font-medium">severe flood risk</span>
               </div>
-              <p className="text-[11px] text-blue-600 mt-1">Simulated risk score &ge; 78</p>
+              <p className="text-[11px] text-red-700 font-medium mt-1 truncate">
+                {priorityOutput.summary.topPriorityHotspot
+                  ? `Rank #1 • Priority ${priorityOutput.summary.topPriorityHotspot.priorityScore}/100 • ${priorityOutput.summary.topPriorityHotspot.priorityLabel}`
+                  : "Routine baseline"}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -583,12 +608,14 @@ export default function NallahPulseDashboard() {
                     <TabsList className="h-7 text-xs bg-slate-100 p-0.5">
                       <TabsTrigger value="engine" className="text-xs px-2 py-1 flex items-center gap-1">
                         <Zap className="h-3 w-3 text-yellow-500" />
-                        Risk Engine
+                        Scenario &amp; Priority
                       </TabsTrigger>
-                      <TabsTrigger value="hotspot" className="text-xs px-2 py-1">
-                        Hotspot
+                      <TabsTrigger value="hotspot" className="text-xs px-2 py-1 flex items-center gap-1">
+                        <Shield className="h-3 w-3 text-blue-600" />
+                        Hotspot Profile
                       </TabsTrigger>
-                      <TabsTrigger value="custom" className="text-xs px-2 py-1">
+                      <TabsTrigger value="custom" className="text-xs px-2 py-1 flex items-center gap-1">
+                        <Globe className="h-3 w-3 text-slate-600" />
                         Coordinates
                       </TabsTrigger>
                     </TabsList>
@@ -723,12 +750,12 @@ export default function NallahPulseDashboard() {
                               </div>
                             )}
 
-                            {/* Recommended Prototype Action (Part 7, 8, 20) */}
+                            {/* Suggested Prototype Action (Part 16) */}
                             {selectedPriority && (
                               <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-1 shadow-sm">
                                 <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 uppercase tracking-wide">
                                   <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                  Recommended Prototype Action
+                                  Suggested Prototype Action
                                 </div>
                                 <p className="text-xs text-emerald-900 leading-relaxed font-medium">
                                   {selectedPriority.recommendedAction}
@@ -901,10 +928,10 @@ export default function NallahPulseDashboard() {
                       </p>
                     </div>
 
-                    {/* Recommended Action */}
+                    {/* Suggested Prototype Action (Part 16) */}
                     <div className="space-y-1 text-xs">
                       <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                        Dynamic Recommended Action (Scenario-Driven)
+                        Suggested Prototype Action (Scenario-Driven)
                       </h4>
                       {(() => {
                         const p = priorityOutput.results.find((item) => item.hotspotId === selectedHotspot.id);

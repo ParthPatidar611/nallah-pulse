@@ -346,8 +346,8 @@ export default function ClientMap({
                       </div>
                     </div>
 
-                    <div className="p-1.5 rounded bg-slate-50 border border-slate-200">
-                      <div className="text-slate-500 text-[10px] uppercase font-semibold">Priority Triage</div>
+                    <div className="p-1.5 rounded bg-blue-50/50 border border-blue-200">
+                      <div className="text-blue-800 text-[10px] uppercase font-bold">Municipal Priority</div>
                       <div className="font-bold text-slate-800">
                         {priority ? `${priority.priorityScore}/100` : "N/A"}
                       </div>
@@ -360,10 +360,10 @@ export default function ClientMap({
                   {priority && (
                     <div className="bg-blue-50/80 p-1.5 rounded border border-blue-200 text-[11px] space-y-0.5">
                       <div className="font-semibold text-blue-900">
-                        Driver: <span className="font-normal text-slate-700">{priority.primaryDriver}</span>
+                        Primary Driver: <span className="font-normal text-slate-700">{priority.primaryDriver}</span>
                       </div>
                       <div className="text-slate-700 leading-tight">
-                        <strong>Action:</strong> {priority.recommendedAction}
+                        <strong>Suggested Action:</strong> {priority.recommendedAction}
                       </div>
                     </div>
                   )}
@@ -383,11 +383,11 @@ export default function ClientMap({
                     }}
                     className="w-full text-center py-1.5 px-2 text-[11px] font-bold bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
                   >
-                    Select Hotspot &amp; View Triage
+                    Select Hotspot &amp; View Decision Support
                   </button>
 
                   <div className="text-[10px] text-slate-400 text-center">
-                    Prototype Data &bull; Demonstration Decision Model
+                    Prototype / Demonstration Data &bull; Decision-Support Model
                   </div>
                 </div>
               </Popup>
