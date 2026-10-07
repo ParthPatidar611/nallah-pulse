@@ -2,7 +2,7 @@
 
 ## Full-Stack Deployment on Vercel
 
-Your flood-analyser project is now configured to run entirely on Vercel! Both the frontend and backend API are deployed as a single application.
+The **NallahPulse** prototype is configured to run on Vercel. Both the Next.js frontend and App Router API endpoints are deployed as a unified application.
 
 ## 🚀 Deployment Steps
 
